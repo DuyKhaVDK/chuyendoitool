@@ -11,8 +11,8 @@ const app = express();
 const router = express.Router();
 
 // --- CẤU HÌNH (BẠN ĐIỀN THÔNG TIN VÀO ĐÂY) ---
-const APP_ID = '17301060084';     
-const APP_SECRET = '2OI7GNRRDK7VDMZRU3AYQ7RPPAPN4VBK';
+const APP_ID = process.env.APP_ID;     
+const APP_SECRET = process.env.APP_SECRET;
 const SHOPEE_API_URL = 'https://open-api.affiliate.shopee.vn/graphql';
 
 // --- HÀM 1: GIẢI MÃ & LÀM SẠCH LINK (LOGIC PRO) ---
