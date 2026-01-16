@@ -3,84 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Converter Pro - Duy Kha</title>
+    <title>Shopee Bulk Converter Pro</title>
     <style>
-        * { box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center; 
-        }
-        .container { width: 100%; max-width: 500px; margin-top: 5vh; }
-        .input-box { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        textarea { width: 100%; height: 100px; border: 1px solid #f0f0f0; border-radius: 12px; padding: 15px; font-size: 16px; outline: none; resize: none; background: #fafafa; }
-        .primary-btn { 
-            width: 100%; background: #ee4d2d; color: white; border: none; padding: 18px; border-radius: 50px; 
-            font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 15px rgba(238, 77, 45, 0.3);
-        }
-        #productList { width: 100%; max-width: 500px; margin-top: 25px; display: flex; flex-direction: column; gap: 15px; }
-        .notif-card { 
-            background: #ffffff; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px;
-            border-top: 4px solid #ee4d2d; box-shadow: 0 5px 20px rgba(0,0,0,0.07); animation: popIn 0.3s ease-out;
-        }
-        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .notif-status { font-size: 15px; font-weight: 700; color: #2e7d32; }
-        .btn-group { display: flex; gap: 10px; width: 100%; }
-        .btn-action { flex: 1; text-decoration: none; padding: 12px 5px; border-radius: 10px; font-size: 14px; font-weight: bold; text-align: center; border: none; cursor: pointer; }
-        .btn-buy { background: #ee4d2d; color: white !important; }
-        .btn-copy { background: #34a853; color: white; }
-        /* --- FOOTER CHUYÊN NGHIỆP --- */
-footer {
-    margin-top: auto;
-    padding: 30px 20px;
-    text-align: center;
-    width: 100%;
-    max-width: 500px;
-}
-
-.copyright {
-    font-size: 13px;
-    color: #888;
-    line-height: 1.6;
-    letter-spacing: 0.3px;
-}
-
-.copyright b {
-    color: #ee4d2d; /* Màu cam Shopee đặc trưng của thương hiệu bạn */
-    font-weight: 700;
-}
-
-.footer-divider {
-    height: 1px;
-    background: linear-gradient(to right, transparent, #ddd, transparent);
-    margin-bottom: 15px;
-    width: 100%;
-}
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f2f2f7; margin: 0; padding: 15px; display: flex; flex-direction: column; min-height: 100vh; }
+        h2 { text-align: center; color: #ee4d2d; margin: 10px 0 20px 0; font-size: 22px; }
+        .main-container { display: flex; gap: 15px; flex: 1; flex-direction: column; }
+        .box { display: flex; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+        .header-box { padding: 12px 15px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .header-title { font-weight: 600; color: #333; font-size: 14px; text-transform: uppercase; }
+        textarea { width: 100%; border: none; padding: 15px; font-size: 15px; outline: none; line-height: 1.5; min-height: 150px; font-family: inherit; resize: vertical; }
+        .controls { margin: 20px 0; }
+        button.primary-btn { width: 100%; background-color: #ee4d2d; color: white; border: none; padding: 15px; font-size: 18px; border-radius: 50px; cursor: pointer; font-weight: bold; }
+        @media (min-width: 768px) { .main-container { flex-direction: row; } .box { flex: 1; } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2 style="text-align: center; color: #ee4d2d; margin-bottom: 25px;">🛍️ CHUYỂN ĐỔI LINK</h2>
-        <div class="input-box">
-            <textarea id="inputText" placeholder="Dán link Shopee vào đây..."></textarea>
-            <button class="primary-btn" onclick="processText()" id="btnConvert">CHUYỂN ĐỔI NGAY</button>
+    <h2>Shopee Bulk Converter Pro</h2>
+    <div class="main-container">
+        <div class="box">
+            <div class="header-box"><span class="header-title">Nhập link</span></div>
+            <textarea id="inputText" placeholder="Dán nội dung vào đây..."></textarea>
+        </div>
+        <div class="box">
+            <div class="header-box"><span class="header-title">Kết quả</span></div>
+            <textarea id="outputText" readonly placeholder="Kết quả sẽ hiện ở đây..."></textarea>
         </div>
     </div>
-    <div id="productList"></div>
-
+    <div class="controls">
+        <button class="primary-btn" onclick="processText()">Chuyển đổi ngay</button>
+    </div>
     <script>
-        function copyToClipboard(url) {
-            navigator.clipboard.writeText(url).then(() => alert('Đã sao chép link!')).catch(() => alert('Lỗi sao chép!'));
-        }
-
         async function processText() {
             const input = document.getElementById('inputText').value;
-            const btn = document.getElementById('btnConvert');
-            const list = document.getElementById('productList');
-
-            if (!input.trim()) return alert('Bạn chưa dán link!');
-            btn.disabled = true; btn.innerText = 'ĐANG XỬ LÝ...';
-            list.innerHTML = ''; 
-
+            const output = document.getElementById('outputText');
+            if (!input.trim()) return alert('Vui lòng nhập nội dung!');
             try {
                 const response = await fetch('/api/convert-text', {
                     method: 'POST',
@@ -88,33 +45,13 @@ footer {
                     body: JSON.stringify({ text: input, subIds: [] }) 
                 });
                 const data = await response.json();
-
-                if (data.success && data.converted > 0) {
-                    data.details.forEach(item => {
-                        if (item.short) {
-                            const div = document.createElement('div');
-                            div.className = 'notif-card';
-                            div.innerHTML = `
-                                <div class="notif-status">✅ Đã chuyển đổi xong</div>
-                                <div class="btn-group">
-                                    <a href="${item.short}" target="_blank" class="btn-action btn-buy">MUA NGAY</a>
-                                    <button class="btn-action btn-copy" onclick="copyToClipboard('${item.short}')">SAO CHÉP LINK</button>
-                                </div>
-                            `;
-                            list.appendChild(div);
-                        }
-                    });
-                } else { alert('Không tìm thấy link Shopee!'); }
-            } catch (e) { alert('Lỗi hệ thống!'); }
-            finally { btn.disabled = false; btn.innerText = 'CHUYỂN ĐỔI NGAY'; }
+                if (data.success) {
+                    output.value = data.newText;
+                }
+            } catch (error) {
+                alert('Lỗi kết nối Server.');
+            }
         }
     </script>
-    <footer>
-        <div class="footer-divider"></div>
-        <div class="copyright">
-            © 2026 <b>HÔM NAY CÓ SALE KHÔNG?</b> • Phát triển bởi <b>Duy Kha Review</b>
-        </div>
-    </footer>
-</body>
 </body>
 </html>
