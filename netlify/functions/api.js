@@ -19,15 +19,19 @@ const SHOPEE_API_URL = 'https://open-api.affiliate.shopee.vn/graphql';
 async function resolveAndCleanUrl(inputUrl) {
     let finalUrl = inputUrl;
 
-    // 1. FOLLOW REDIRECT (Giải mã link rút gọn)
-    if (inputUrl.includes('s.shopee.vn') || inputUrl.includes('shp.ee') || inputUrl.includes('vn.shp.ee')) {
+    // 1. FOLLOW REDIRECT (Giải mã link rút gọn Shopee + third-party: nghien.co, dealgiare.com...)
+    const isShopeeShort = inputUrl.includes('s.shopee.vn') || inputUrl.includes('shp.ee') || inputUrl.includes('vn.shp.ee');
+    const isThirdParty  = !inputUrl.includes('shopee.vn');
+    if (isShopeeShort || isThirdParty) {
         try {
             console.log(`>> Dang giai ma link: ${inputUrl}`);
             const response = await axios.get(inputUrl, {
-                maxRedirects: 5,
-                validateStatus: null 
+                maxRedirects: 10,
+                timeout: 8000,
+                validateStatus: null,
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
             });
-            finalUrl = response.request.res.responseUrl || inputUrl;
+            finalUrl = response.request?.res?.responseUrl || response.headers?.location || inputUrl;
             console.log(`>> Link goc tim duoc: ${finalUrl}`);
         } catch (error) {
             console.log(`>> Khong the giai ma link: ${inputUrl}, giu nguyen.`);
@@ -153,8 +157,8 @@ router.post('/convert-text', async (req, res) => {
 
     if (!text) return res.status(400).json({ error: 'Empty text' });
 
-    // Regex tìm link (bao gồm cả s.shopee.vn)
-    const urlRegex = /(https?:\/\/(?:www\.)?(?:shopee\.vn|vn\.shp\.ee|shp\.ee|s\.shopee\.vn)[^\s]*)/gi;
+    // Regex tìm link Shopee + third-party short link (nghien.co, dealgiare.com...)
+    const urlRegex = /(https?:\/\/(?:www\.)?(?:shopee\.vn|vn\.shp\.ee|shp\.ee|s\.shopee\.vn|[a-z0-9-]+\.[a-z]{2,}\/[A-Za-z0-9]{3,12})[^\s]*)/gi;
     
     const foundLinks = text.match(urlRegex) || [];
     const uniqueLinks = [...new Set(foundLinks)];
@@ -170,6 +174,11 @@ router.post('/convert-text', async (req, res) => {
         
         // 2. Giải mã & Làm sạch link
         const realProductUrl = await resolveAndCleanUrl(cleanInput);
+
+        // Bỏ qua nếu không resolve ra shopee.vn
+        if (!realProductUrl || !realProductUrl.includes('shopee.vn')) {
+            return { original: url, resolved: realProductUrl, short: null };
+        }
 
         // 3. Tạo link Affiliate (kèm SubID)
         const myShortLink = await getShopeeShortLink(realProductUrl, subIds);
