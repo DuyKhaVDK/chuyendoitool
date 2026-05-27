@@ -50,7 +50,7 @@ async function resolveAndCleanUrl(inputUrl) {
             const newParams = new URLSearchParams();
 
             // Danh sách tham số được phép giữ lại
-            const allowedKeys = ['keyword', 'shop', 'evcode', 'signature', 'promotionId', 'mmp_pid'];
+            const allowedKeys = ['keyword', 'shop', 'evcode', 'signature', 'promotionId', 'mmp_pid', 'voucherCode', 'v4'];
 
             allowedKeys.forEach(key => {
                 if (originalParams.has(key)) {
