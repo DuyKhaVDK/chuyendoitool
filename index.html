@@ -115,110 +115,140 @@
     </div>
 
     <script>
-        async function pasteClipboard() {
-            const inputArea = document.getElementById('inputText');
-            try {
-                const text = await navigator.clipboard.readText();
-                if (text) {
-                    inputArea.value = text;
-                    inputArea.style.backgroundColor = "#e3f2fd";
-                    setTimeout(() => inputArea.style.backgroundColor = "white", 300);
-                } else alert('Clipboard trống!');
-            } catch (err) {
-                alert('Vui lòng nhấn giữ vào ô nhập liệu và chọn "Dán".');
-                inputArea.focus();
-            }
+    // === LOCALSTORAGE CHO SUB IDS ===
+    const SUB_STORAGE_KEY = 'shopee_sub_ids';
+
+    function saveSubIds() {
+        const vals = {};
+        for (let i = 1; i <= 5; i++) {
+            vals['sub' + i] = document.getElementById('sub' + i).value;
         }
+        localStorage.setItem(SUB_STORAGE_KEY, JSON.stringify(vals));
+    }
 
-        function clearInput() {
-            document.getElementById('inputText').value = '';
-            document.getElementById('inputText').focus();
-        }
-
-        let hasCheckedClipboard = false;
-        document.getElementById('inputText').addEventListener('focus', async () => {
-            if (hasCheckedClipboard) return;
-            try {
-                const permission = await navigator.permissions.query({ name: 'clipboard-read' });
-                if (permission.state === 'granted' || permission.state === 'prompt') {
-                    const text = await navigator.clipboard.readText();
-                    if (text && (text.includes('shopee.vn') || text.includes('shp.ee'))) {
-                        if (confirm('Phát hiện link Shopee. Dán ngay?')) {
-                            document.getElementById('inputText').value = text;
-                        }
-                    }
-                }
-            } catch (e) {}
-            hasCheckedClipboard = true;
-        });
-
-        async function processText() {
-            const input = document.getElementById('inputText').value;
-            const output = document.getElementById('outputText');
-            const btn = document.getElementById('btnConvert');
-            const debugSection = document.getElementById('debugSection');
-            const debugContent = document.getElementById('debugContent');
-
-            // --- LẤY DỮ LIỆU SUB ID ---
-            const subIds = [];
+    function loadSubIds() {
+        try {
+            const saved = localStorage.getItem(SUB_STORAGE_KEY);
+            if (!saved) return;
+            const vals = JSON.parse(saved);
             for (let i = 1; i <= 5; i++) {
-                const val = document.getElementById('sub' + i).value.trim();
-                if (val) subIds.push(val);
-            }
-            // --------------------------
-
-            if (!input.trim()) return alert('Vui lòng nhập nội dung!');
-
-            btn.disabled = true; btn.innerText = 'Đang xử lý...';
-            output.value = '';
-            debugSection.style.display = 'none';
-            debugContent.innerHTML = '';
-
-            try {
-                // Gọi qua redirect đã cấu hình trong netlify.toml
-                    const response = await fetch('/api/convert-text', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    // Gửi thêm subIds lên server
-                    body: JSON.stringify({ text: input, subIds: subIds }) 
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    output.value = data.newText;
-                    
-                    if (data.details && data.details.length > 0) {
-                        debugSection.style.display = 'block';
-                        data.details.forEach(item => {
-                            const row = document.createElement('div');
-                            row.className = 'debug-row';
-                            row.innerHTML = `
-                                <div><span class="lbl">Gốc:</span> <span class="val">${item.original}</span></div>
-                                <div><span class="lbl">Sạch:</span> <span class="val clean">${item.resolved}</span></div>
-                                <div><span class="lbl">Convert:</span> <span class="val aff">${item.short || 'Lỗi'}</span></div>
-                            `;
-                            debugContent.appendChild(row);
-                        });
-                    }
-                    if(data.converted === 0) alert('Không tìm thấy link Shopee hợp lệ.');
-                } else {
-                    alert('Lỗi: ' + data.error);
+                const el = document.getElementById('sub' + i);
+                if (el && vals['sub' + i] !== undefined) {
+                    el.value = vals['sub' + i];
                 }
-            } catch (error) {
-                alert('Lỗi kết nối Server.');
-            } finally {
-                btn.disabled = false; btn.innerText = 'Chuyển đổi ngay';
             }
+        } catch (e) {}
+    }
+
+    // Gắn sự kiện lưu tự động khi user gõ vào bất kỳ ô sub nào
+    for (let i = 1; i <= 5; i++) {
+        document.getElementById('sub' + i).addEventListener('input', saveSubIds);
+    }
+
+    // Tải giá trị đã lưu khi trang khởi động
+    loadSubIds();
+    // ================================
+
+    async function pasteClipboard() {
+        const inputArea = document.getElementById('inputText');
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text) {
+                inputArea.value = text;
+                inputArea.style.backgroundColor = "#e3f2fd";
+                setTimeout(() => inputArea.style.backgroundColor = "white", 300);
+            } else alert('Clipboard trống!');
+        } catch (err) {
+            alert('Vui lòng nhấn giữ vào ô nhập liệu và chọn "Dán".');
+            inputArea.focus();
+        }
+    }
+
+    function clearInput() {
+        document.getElementById('inputText').value = '';
+        document.getElementById('inputText').focus();
+    }
+
+    let hasCheckedClipboard = false;
+    document.getElementById('inputText').addEventListener('focus', async () => {
+        if (hasCheckedClipboard) return;
+        try {
+            const permission = await navigator.permissions.query({ name: 'clipboard-read' });
+            if (permission.state === 'granted' || permission.state === 'prompt') {
+                const text = await navigator.clipboard.readText();
+                if (text && (text.includes('shopee.vn') || text.includes('shp.ee'))) {
+                    if (confirm('Phát hiện link Shopee. Dán ngay?')) {
+                        document.getElementById('inputText').value = text;
+                    }
+                }
+            }
+        } catch (e) {}
+        hasCheckedClipboard = true;
+    });
+
+    async function processText() {
+        const input = document.getElementById('inputText').value;
+        const output = document.getElementById('outputText');
+        const btn = document.getElementById('btnConvert');
+        const debugSection = document.getElementById('debugSection');
+        const debugContent = document.getElementById('debugContent');
+
+        const subIds = [];
+        for (let i = 1; i <= 5; i++) {
+            const val = document.getElementById('sub' + i).value.trim();
+            if (val) subIds.push(val);
         }
 
-        function copyResult() {
-            const copyText = document.getElementById("outputText");
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(copyText.value);
-            alert("Đã sao chép!");
+        if (!input.trim()) return alert('Vui lòng nhập nội dung!');
+
+        btn.disabled = true; btn.innerText = 'Đang xử lý...';
+        output.value = '';
+        debugSection.style.display = 'none';
+        debugContent.innerHTML = '';
+
+        try {
+            const response = await fetch('/api/convert-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: input, subIds: subIds }) 
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                output.value = data.newText;
+                
+                if (data.details && data.details.length > 0) {
+                    debugSection.style.display = 'block';
+                    data.details.forEach(item => {
+                        const row = document.createElement('div');
+                        row.className = 'debug-row';
+                        row.innerHTML = `
+                            <div><span class="lbl">Gốc:</span> <span class="val">${item.original}</span></div>
+                            <div><span class="lbl">Sạch:</span> <span class="val clean">${item.resolved}</span></div>
+                            <div><span class="lbl">Convert:</span> <span class="val aff">${item.short || 'Lỗi'}</span></div>
+                        `;
+                        debugContent.appendChild(row);
+                    });
+                }
+                if(data.converted === 0) alert('Không tìm thấy link Shopee hợp lệ.');
+            } else {
+                alert('Lỗi: ' + data.error);
+            }
+        } catch (error) {
+            alert('Lỗi kết nối Server.');
+        } finally {
+            btn.disabled = false; btn.innerText = 'Chuyển đổi ngay';
         }
-    </script>
+    }
+
+    function copyResult() {
+        const copyText = document.getElementById("outputText");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        alert("Đã sao chép!");
+    }
+</script>
 </body>
 </html>
