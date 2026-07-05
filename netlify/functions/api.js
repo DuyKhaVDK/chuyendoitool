@@ -19,13 +19,34 @@ const SHOPEE_API_URL = 'https://open-api.affiliate.shopee.vn/graphql';
 async function resolveAndCleanUrl(inputUrl) {
     let finalUrl = inputUrl;
 
-    // 1. FOLLOW REDIRECT (Giải mã link rút gọn)
-    if (inputUrl.includes('s.shopee.vn') || inputUrl.includes('shp.ee') || inputUrl.includes('vn.shp.ee')) {
+    // 0. DECODE homnaysale.com short links via private API
+    const homnaysaleMatch = inputUrl.match(/https?:\/\/homnaysale\.com\/([A-Za-z0-9]{3,12})([?#]|$)/);
+    if (homnaysaleMatch) {
+        try {
+            console.log(`>> Dang giai ma homnaysale link: ${inputUrl}`);
+            const r = await axios.get(
+                `https://homnaysale.com/api/resolve?code=${homnaysaleMatch[1]}`,
+                { headers: { 'x-resolve-key': process.env.HOMNAYSALE_SECRET }, timeout: 8000 }
+            );
+            if (r.data && r.data.url) {
+                finalUrl = r.data.url;
+                console.log(`>> Link goc tim duoc: ${finalUrl}`);
+            } else {
+                return inputUrl;
+            }
+        } catch (error) {
+            console.log(`>> Khong the giai ma homnaysale link: ${inputUrl}, giu nguyen.`);
+            return inputUrl;
+        }
+    }
+
+    // 1. FOLLOW REDIRECT (Giải mã link rút gọn Shopee)
+    else if (inputUrl.includes('s.shopee.vn') || inputUrl.includes('shp.ee') || inputUrl.includes('vn.shp.ee')) {
         try {
             console.log(`>> Dang giai ma link: ${inputUrl}`);
             const response = await axios.get(inputUrl, {
                 maxRedirects: 5,
-                validateStatus: null 
+                validateStatus: null
             });
             finalUrl = response.request.res.responseUrl || inputUrl;
             console.log(`>> Link goc tim duoc: ${finalUrl}`);
@@ -153,8 +174,8 @@ router.post('/convert-text', async (req, res) => {
 
     if (!text) return res.status(400).json({ error: 'Empty text' });
 
-    // Regex tìm link (bao gồm cả s.shopee.vn)
-    const urlRegex = /(https?:\/\/(?:www\.)?(?:shopee\.vn|vn\.shp\.ee|shp\.ee|s\.shopee\.vn)[^\s]*)/gi;
+    // Regex tìm link (Shopee + homnaysale short links)
+    const urlRegex = /(https?:\/\/(?:www\.)?(?:shopee\.vn|vn\.shp\.ee|shp\.ee|s\.shopee\.vn|homnaysale\.com)[^\s]*)/gi;
     
     const foundLinks = text.match(urlRegex) || [];
     const uniqueLinks = [...new Set(foundLinks)];
